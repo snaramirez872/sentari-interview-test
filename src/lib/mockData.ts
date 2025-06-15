@@ -6,35 +6,36 @@ import fs from 'fs';
 import path from 'path';
 import { VoiceEntry } from './types';
 
-const dat = path.resolve(__dirname, './Expanded_Diary_Entries');
-const content = fs.readFileSync(dat, 'utf-8');
+const filePath = path.join(__dirname, 'Expanded_Diary_Entries.csv');
+const fileData = fs.readFileSync(filePath, 'utf-8');
 
-// Parse Headers
-const [headerLine, ...lines] = content.split('\n').filter(Boolean);
-const headers = headerLine.split(',').map(head => head.trim());
+const rows = fileData.trim().split('\n');
+const headers = rows[0].split(',').map(h => h.trim());
+const entries: VoiceEntry[] = rows.slice(1, 116).map((line) => {
+  const values = line.split(',').map(v => v.trim().replace(/^"|"$/g, ''));
+  const raw: Record<string, string> = {};
+  headers.forEach((h, i) => {
+    raw[h] = values[i] ?? '';
+  });
 
-export const mockVoiceEntries: VoiceEntry[] = lines.map((line) => {
-    const vals = line.split(',').map(val => val.trim().replace(/^"|"$/g, ''));
+  const entry: VoiceEntry = {
+    id: raw.id || '',
+    user_id: raw.user_id || '',
+    audio_url: raw.audio_url || null,
+    transcript_raw: raw.transcript_raw || '',
+    transcript_user: raw.transcript_user || '',
+    language_detected: raw.language_detected || '',
+    language_rendered: raw.language_rendered || '',
+    tags_model: raw.tags_model ? raw.tags_model.split(';').map(t => t.trim()) : [],
+    tags_user: raw.tags_user ? raw.tags_user.split(';').map(t => t.trim()) : [],
+    category: raw.category || null,
+    created_at: raw.created_at || new Date().toISOString(),
+    updated_at: raw.updated_at || new Date().toISOString(),
+    emotion_score_score: raw.emotion_score_score ? parseFloat(raw.emotion_score_score) : null,
+    embedding: raw.embedding ? JSON.parse(raw.embedding) : null,
+  };
 
-    const entry: any = {};
-    headers.forEach((k, i) => {
-        entry[k] = vals[i];
-    });
-
-    return {
-        id: entry.id,
-        user_id: entry.user_id,
-        audio_url: entry.audio_url || null,
-        transcript_raw: entry.transcript_raw,
-        transcript_user: entry.transcript_user,
-        language_detected: entry.language_detected,
-        language_rendered: entry.language_rendered,
-        tags_model: entry.tags_model ? JSON.parse(entry.tags_model) : [],
-        tags_user: entry.tags_user ? JSON.parse(entry.tags_user) : [],
-        category: entry.category || null,
-        created_at: entry.created_at,
-        updated_at: entry.updated_at,
-        emotion_score_score: entry.emotion_score_score ? Number(entry.emotion_score_score) : null,
-        embedding: entry.embedding ? JSON.parse(entry.embedding) : null,
-    } as VoiceEntry;
+  return entry;
 });
+
+export const mockVoiceEntries = entries;
