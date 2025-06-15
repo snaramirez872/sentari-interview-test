@@ -11,7 +11,7 @@ const fileData = fs.readFileSync(filePath, 'utf-8');
 
 const rows = fileData.trim().split('\n');
 const headers = rows[0].split(',').map(h => h.trim());
-const entries: VoiceEntry[] = rows.slice(1, 116).map((line) => {
+const entries: VoiceEntry[] = rows.slice(1, 16).map((line) => { // Uses first 15 rows of data
   const values = line.split(',').map(v => v.trim().replace(/^"|"$/g, ''));
   const raw: Record<string, string> = {};
   headers.forEach((h, i) => {
@@ -32,7 +32,13 @@ const entries: VoiceEntry[] = rows.slice(1, 116).map((line) => {
     created_at: raw.created_at || new Date().toISOString(),
     updated_at: raw.updated_at || new Date().toISOString(),
     emotion_score_score: raw.emotion_score_score ? parseFloat(raw.emotion_score_score) : null,
-    embedding: raw.embedding ? JSON.parse(raw.embedding) : null,
+    embedding: (() => {
+    try {
+      return raw.embedding ? JSON.parse(raw.embedding) : null;
+    } catch {
+      return null;
+    }
+  })(),
   };
 
   return entry;
